@@ -5,6 +5,10 @@ const routes = require("./api/routes");
 
 const app = express();
 
+app.get("/", (req, res) => {
+  res.send("Harmonized backend running...");
+});
+
 app.use(bodyParser.json());
 app.use("/api", routes);
 
