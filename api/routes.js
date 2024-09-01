@@ -14,7 +14,7 @@ const {
   countDocumentsInCollection,
 } = require("../utils/helpers");
 const { DB_COLLECTIONS } = require("../utils/constants");
-const { compact, includes } = require("lodash");
+const { compact, includes, replace } = require("lodash");
 
 const router = express.Router();
 
@@ -47,9 +47,10 @@ router.post("/send-verification-email", (req, res) => {
 
 router.post("/send-verification-sms", async (req, res) => {
   const { to } = req.body;
+  const phoneNumber = replace(to, /\s+/g, "");
   const verificationCode = Math.floor(10000 + Math.random() * 90000).toString(); // Generate a 5-digit code
   try {
-    await sendVerificationCodeToPhoneNumber(to, verificationCode);
+    await sendVerificationCodeToPhoneNumber(phoneNumber, verificationCode);
     res.status(200).json({
       success: true,
       message: "Verification code sent",
