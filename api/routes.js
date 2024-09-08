@@ -15,6 +15,7 @@ const {
 } = require("../utils/helpers");
 const { DB_COLLECTIONS } = require("../utils/constants");
 const { compact, includes, replace } = require("lodash");
+const axios = require("axios");
 
 const router = express.Router();
 
@@ -142,6 +143,34 @@ router.post("/update-profile", async (req, res) => {
 router.get("/users-list", async (req, res) => {
   try {
     const users = await getAllDocumentsFromCollection(DB_COLLECTIONS.users);
+    res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, users: [] });
+  }
+});
+
+router.get("/testUser", async (req, res) => {
+  try {
+    const doc = await getDataFromDatabase(
+      DB_COLLECTIONS.users,
+      "devmaster052@gmail.com"
+    );
+    console.log(doc);
+    const newDoc = {
+      id: "test@gmail.com",
+      profile: {
+        ...doc.profile,
+        id: "test@gmail.com",
+        email: "test@gmail.com",
+      },
+    };
+    const status = await storeDataInDatabase(
+      newDoc,
+      DB_COLLECTIONS.users,
+      newDoc.id
+    );
+    console.log(status);
     res.status(200).json({ success: true, users });
   } catch (error) {
     console.error(error);
@@ -283,6 +312,36 @@ router.post("/attribute-counts", async (req, res) => {
     res.status(500).json({
       counts: stats,
     });
+  }
+});
+
+router.post("/verify-recaptcha", async (req, res) => {
+  const { token } = req.body;
+  const secretKey = process.env.CAPTCHA_SECRET;
+
+  try {
+    const response = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: secretKey,
+          response: token,
+        },
+      }
+    );
+    const data = response.data;
+    if (data.success) {
+      return res.json({ success: true });
+    } else {
+      return res.json({
+        success: false,
+        message: "ReCAPTCHA verification failed",
+      });
+    }
+  } catch (error) {
+    console.error("Error verifying reCAPTCHA:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
